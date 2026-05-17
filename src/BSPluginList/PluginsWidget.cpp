@@ -692,32 +692,24 @@ void PluginsWidget::checkLoadOrderChanged(const QString& binaryName)
   if (!QFileInfo(loadOrderSnapshot).exists())
     return;
 
-  const bool enableWarning = Settings::instance()->externalChangeWarning();
-
   // we just refreshed and rewrote loadorder.txt if plugins.txt changed
-  if (enableWarning && (m_ExternalStatesChanged ||
-                        hashFile(loadOrderName) != hashFile(loadOrderSnapshot))) {
+  if (m_ExternalStatesChanged ||
+      hashFile(loadOrderName) != hashFile(loadOrderSnapshot)) {
 
     if (binaryName.compare("Loot.exe", Qt::CaseInsensitive) == 0) {
       importLootGroups();
     } else {
-      const auto response = QMessageBox::warning(
-          parent, tr("Load order changed"),
-          tr("Load order was changed while running %1. Keep changes?").arg(binaryName),
-          QMessageBox::Yes | QMessageBox::No);
+      // Are we being serious?! Reverting to pre-launch only; will it work? it should, but knowing me it won't
+      if (!tryRestore(pluginsName, "snapshot", true, parent) ||
+          !tryRestore(loadOrderName, "snapshot", true, parent)) {
+        const auto e = ::GetLastError();
 
-      if (response == QMessageBox::No) {
-        if (!tryRestore(pluginsName, "snapshot", true, parent) ||
-            !tryRestore(loadOrderName, "snapshot", true, parent)) {
-          const auto e = ::GetLastError();
+        QMessageBox::critical(
+            this, tr("Restore failed"),
+            tr("Failed to restore the backup. Errorcode: %1")
+                .arg(QString::fromStdWString(MOBase::formatSystemMessage(e))));
 
-          QMessageBox::critical(
-              this, tr("Restore failed"),
-              tr("Failed to restore the backup. Errorcode: %1")
-                  .arg(QString::fromStdWString(MOBase::formatSystemMessage(e))));
-
-          return;
-        }
+        return;
       }
     }
   }
