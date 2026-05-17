@@ -700,6 +700,7 @@ void PluginsWidget::checkLoadOrderChanged(const QString& binaryName)
       importLootGroups();
     } else {
       // Are we being serious?! Reverting to pre-launch only; will it work? it should, but knowing me it won't
+      // - Apodeictic
       if (!tryRestore(pluginsName, "snapshot", true, parent) ||
           !tryRestore(loadOrderName, "snapshot", true, parent)) {
         const auto e = ::GetLastError();
